@@ -7,7 +7,13 @@ This file will contain all the seperate subfiles and will be the main entry poin
 def main():
     """Main part of code that is being run when the project starts."""
     print("Welcome to the ScottishGlen Asset tracking system")
-
+def asset_tracking():
+    """Function that will be used to track the assets of the company."""
+    
+    asset_name = input("Please enter the asset name you want to track:")
+    asset_description = input("Please enter the asset description:")
+    department = input("Please enter the department that the asset belongs to:")
+    print(f"Asset tracked: {asset_name} - {asset_description}")
 
 if __name__ == "__main__":
     main()

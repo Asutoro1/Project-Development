@@ -13,7 +13,7 @@ def asset_tracking():
     asset_name = input("Please enter the asset name you want to track:")
     asset_description = input("Please enter the asset description:")
     department = input("Please enter the department that the asset belongs to:")
-    print(f"Asset tracked: {asset_name} - {asset_description}")
+    print(f"Asset tracked: {asset_name} - {asset_description} - {department}")
 
 if __name__ == "__main__":
     main()

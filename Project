@@ -1,19 +1,86 @@
+import sqlite3
+def create_database():
+    connection = sqlite3.connect("AssetTracking.db")
+
+    cursor = mydb.cursor()
+
+    cursor.execute("""
+        CREATE DATABASE IF NOT EXISTS Assets( 
+            asset_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            system_name TEXT NOT NULL,
+            model TEXT,
+            manufacturer TEXT,
+            system_type TEXT,
+            ipaddress TEXT
+        )
+    """)
+    mydb.commit()
+    mydb.close()
+    print("Database created!")
+
 """
 This will be the main file that will be executed when i run the project
 This file will contain all the seperate subfiles and will be the main entry point of the program
 """
 
+def display_menu():
+    #This is dysplaying what all the options are.
+    print("Welcome to the Scottish Glen Asset tracking system")
+    print("What option would you like to do")
+    print()
+    print("1. Add a new asset")
+    print("2. View an asset")
+    print("3. Edit an asset")
+    print("4. Delete an asset")
+    print("5. Exit")
+    print()
+    print("Please select an option from the above menu")
+
+def select_option():
+    #This is getting the users choice of what they would like to do
+    valid_option = False
+    while not valid_option:
+        try:
+            choice = int(input("Option Selected: "))
+            if choice in (1,2,3,4,5):
+                valid_option = True
+            else:
+                print("please enter a valid option")
+        except ValueError:
+            print("Please enter a valid option")
+    return choice
+def adding_asset():
+    #Function that will be used to add a new assets to the database.
+    
+    system_name = input("Please enter the asset name you want to track:")
+    model = input("Please enter the model of the asset:")
+    manufacturer = input("Please enter the manufacturer of that the asset:")
+    system_type = input("Please enter the type of asset:")
+    ipaddress = input("Please enter the IP address of the asset:")
+    print(f"Asset tracked: {system_name} - {model} - {manufacturer} - {system_type} - {ipaddress}")
 
 def main():
-    """Main part of code that is being run when the project starts."""
-    print("Welcome to the ScottishGlen Asset tracking system")
-def asset_tracking():
-    """Function that will be used to track the assets of the company."""
-    
-    asset_name = input("Please enter the asset name you want to track:")
-    asset_description = input("Please enter the asset description:")
-    department = input("Please enter the department that the asset belongs to:")
-    print(f"Asset tracked: {asset_name} - {asset_description} - {department}")
+    create_database()
 
+    display_menu()
+    choice = select_option()
+    if choice == 1:
+        adding_asset()
+    elif choice == 2:
+        view_assets()
+    elif choice == 3:
+        edit_assets()
+    elif choice == 4:
+        delete_asset()
+    elif choice == 5:
+        print("Thanks for using our tracking system:")
+        break
+    
+
+
+
+
+
+# Running processes
 if __name__ == "__main__":
     main()

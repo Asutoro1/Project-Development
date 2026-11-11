@@ -1,3 +1,7 @@
+"""
+Created By Jamie Laughton :D 
+"""
+
 import sqlite3
 
 def create_database():
@@ -13,14 +17,140 @@ def create_database():
             model TEXT,
             manufacturer TEXT,
             system_type TEXT,
-            ipaddress TEXT
-        )
-    """)
+            ipaddress TEXT,
+            department TEXT)
+        """) 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Employee( 
+            employee_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT NOT NULL,
+            last_name TEXT,
+            email TEXT,
+            department TEXT
+            )
+            """)
+
     mydb.commit()
     mydb.close()
     print("Database created!")
+def main_menu():
+    print("Welcome to the Scottish Glen system")
+    print("What option would you like to do")
+    print()
+    print("1. enter the employee system")
+    print("2. enter the asset tracking system")
+    print("3. exit")
+    print()
+    print("Please select an option from the above menu")
+def select_option1():
+    #This is getting the users choice of what they would like to do
+    valid_option = False
+    while not valid_option:
+        try:
+            choice = int(input("Option Selected: "))
+            if choice in (1,2,3):
+                valid_option = True
+            else:
+                print("please enter a valid option")
+        except ValueError:
+            print("Please enter a valid option")
+    return choice
 
-def display_menu():
+def employee_menu():
+    #This is dysplaying what all the options are.
+    print("Welcome to the Scottish Glen employee system")
+    print("What option would you like to do")
+    print()
+    print("1. Add a new employee")
+    print("2. View all employees")
+    print("3. Edit an employee record")
+    print("4. Delete an employee record")
+    print("5. Exit")
+    print()
+    print("Please select an option from the above menu")
+def select_option2():
+    #This is getting the users choice of what they would like to do
+    valid_option = False
+    while not valid_option:
+        try:
+            choice = int(input("Option Selected: "))
+            if choice in (1,2,3,4,5):
+                valid_option = True
+            else:
+                print("please enter a valid option")
+        except ValueError:
+            print("Please enter a valid option")
+    return choice
+def adding_employee():
+    #Function that will be used to add a new employees to the database.
+    
+    first_name = input("Please enter the first name of the employee:")
+    last_name = input("Please enter the last name of the employee:")
+    email = input("Please enter the email address of the employee:")
+    department = input("Please enter the department of the employee:")
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("""
+            INSERT INTO Employee
+            (first_name, last_name, email, department)
+            VALUES(?, ?, ?, ?)
+        """, (first_name, last_name, email, department))
+    print(f"employee tracked: {first_name} - {last_name} - {email} - {department} ")
+def view_employees():
+    #This function will show all the employee data currently collected
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("SELECT * FROM Employee")
+        employees = cursor.fetchall()
+    if not employees:
+        print("No employees found.")
+        return
+    for employee in employees:
+        print(employee)
+def edit_employee():
+    employee_id = input("Enter the employee ID that you would like to edit:")
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+
+        cursor.execute("""
+            SELECT * FROM Employee WHERE employee_id = ?
+        """, (employee_id,))
+        employee = cursor.fetchone()
+
+        if employee is None:
+            print("employee not found.")
+            return
+        first_name = input("Please enter the first name of the employee:")
+        last_name = input("Please enter the last name of the employee:")
+        email = input("Please enter the email address of the employee:")
+        department = input("Please enter the department of the employee:")
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("""
+            UPDATE Employee
+            SET first_name, last_name, email, department
+            WHERE employee_id = ?
+        """, (first_name, last_name, email, department))
+    print("employee data successfully changed.")
+def delete_employee():
+    employee_id = input("Enter the employee ID that you would like to delete:")
+    
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+
+        cursor.execute("""
+            DELETE FROM Employee WHERE employee_id = ?
+        """, (employee_id))
+
+        if cursor.rowcount == 0:
+            print("Employee not found.")
+        else:
+            print ("Employee has been deleted.") 
+
+def asset_menu():
     #This is dysplaying what all the options are.
     print("Welcome to the Scottish Glen Asset tracking system")
     print("What option would you like to do")
@@ -33,7 +163,7 @@ def display_menu():
     print()
     print("Please select an option from the above menu")
 
-def select_option():
+def select_option3():
     #This is getting the users choice of what they would like to do
     valid_option = False
     while not valid_option:
@@ -54,14 +184,15 @@ def adding_asset():
     manufacturer = input("Please enter the manufacturer of that the asset:")
     system_type = input("Please enter the type of asset:")
     ipaddress = input("Please enter the IP address of the asset:")
+    department = input("Pleas enter the department this is apart of")
     with sqlite3.connect("AssetTracking.db") as mydb:
         cursor = mydb.cursor()
         cursor.execute("""
             INSERT INTO Assets
-            (system_name, model, manufacturer, system_type, ipaddress)
-            VALUES(?, ?, ?, ?, ?)
+            (system_name, model, manufacturer, system_type, ipaddress, department)
+            VALUES(?, ?, ?, ?, ?, ?)
         """, (system_name, model, manufacturer, system_type, ipaddress))
-    print(f"Asset tracked: {system_name} - {model} - {manufacturer} - {system_type} - {ipaddress}")
+    print(f"Asset tracked: {system_name} - {model} - {manufacturer} - {system_type} - {ipaddress} - {department}")
 def view_assets():
     #This function will show all the asset data currently collected
     with sqlite3.connect("AssetTracking.db") as mydb:
@@ -92,11 +223,12 @@ def edit_assets():
         manufacturer = input("enter the manufacturer:")
         system_type = input("enter asset type:")
         ipaddress = input("enter ip address:")
+        department = input("enter department:")
         cursor.execute("""
                     UPDATE Assets
-                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ?
+                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ?, department = ?
                     WHERE asset_id = ?
-                """, (system_name, model, manufacturer, system_type, ipaddress))
+                """, (system_name, model, manufacturer, system_type, ipaddress, department))
         print("Asset data successfully changed.")
 def delete_asset():
     asset_id = input("Enter the asset ID that you would like to edit:")
@@ -106,7 +238,7 @@ def delete_asset():
 
         cursor.execute("""
             DELETE FROM Assets WHERE asset_id = ?
-        """, (asset_id))
+        """, (asset_id,))
 
         if cursor.rowcount == 0:
             print("Asset not found.")
@@ -115,20 +247,36 @@ def delete_asset():
 
 def main():
     create_database()
-
-    display_menu()
-    choice = select_option()
+    main_menu()
+    choice = select_option1()
     if choice == 1:
-        adding_asset()
+        employee_menu()
+        choice = select_option3()
+        if choice == 1:
+            adding_employee()
+        elif choice == 2:
+            view_employees()
+        elif choice == 3:
+            edit_employee()
+        elif choice == 4:
+            delete_employee()
+        elif choice == 5:
+            print("Thanks for using our employee system:")
     elif choice == 2:
-        view_assets()
+        asset_menu()
+        choice = select_option3()
+        if choice == 1:
+            adding_asset()
+        elif choice == 2:
+            view_assets()
+        elif choice == 3:
+            edit_assets()
+        elif choice == 4:
+            delete_asset()
+        elif choice == 5:
+            print("Thanks for using our tracking system:")
     elif choice == 3:
-        edit_assets()
-    elif choice == 4:
-        delete_asset()
-    elif choice == 5:
-        print("Thanks for using our tracking system:")
-        
+        print("Thanks for using our system:")
 # Running processes
 if __name__ == "__main__":
     main()

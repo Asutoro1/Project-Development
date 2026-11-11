@@ -1,11 +1,13 @@
 import sqlite3
+
 def create_database():
-    connection = sqlite3.connect("AssetTracking.db")
+    #Database and table creation
+    mydb = sqlite3.connect("AssetTracking.db")
 
     cursor = mydb.cursor()
 
     cursor.execute("""
-        CREATE DATABASE IF NOT EXISTS Assets( 
+        CREATE TABLE IF NOT EXISTS Assets( 
             asset_id INTEGER PRIMARY KEY AUTOINCREMENT,
             system_name TEXT NOT NULL,
             model TEXT,
@@ -17,11 +19,6 @@ def create_database():
     mydb.commit()
     mydb.close()
     print("Database created!")
-
-"""
-This will be the main file that will be executed when i run the project
-This file will contain all the seperate subfiles and will be the main entry point of the program
-"""
 
 def display_menu():
     #This is dysplaying what all the options are.
@@ -57,7 +54,29 @@ def adding_asset():
     manufacturer = input("Please enter the manufacturer of that the asset:")
     system_type = input("Please enter the type of asset:")
     ipaddress = input("Please enter the IP address of the asset:")
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("""
+            INSERT INTO Assets
+            (system_name, model, manufacturer, system_type, ipaddress)
+            VALUES(?, ?, ?, ?, ?)
+        """, (system_name, model, manufacturer, system_type, ipaddress))
     print(f"Asset tracked: {system_name} - {model} - {manufacturer} - {system_type} - {ipaddress}")
+def view_assets():
+    #This function will show all the asset data currently collected
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("SELECT * FROM Assets")
+        assets = cursor.fetchall()
+    if not assets:
+        print("No assets found.")
+        return
+    for asset in assets:
+        print(asset)
+def edit_assets():
+    print()
+def delete_asset():
+    print()
 
 def main():
     create_database()
@@ -74,13 +93,7 @@ def main():
         delete_asset()
     elif choice == 5:
         print("Thanks for using our tracking system:")
-        break
-    
-
-
-
-
-
+        
 # Running processes
 if __name__ == "__main__":
     main()

@@ -26,7 +26,7 @@ def display_menu():
     print("What option would you like to do")
     print()
     print("1. Add a new asset")
-    print("2. View an asset")
+    print("2. View all assets")
     print("3. Edit an asset")
     print("4. Delete an asset")
     print("5. Exit")
@@ -74,9 +74,44 @@ def view_assets():
     for asset in assets:
         print(asset)
 def edit_assets():
-    print()
+    asset_id = input("Enter the asset ID that you would like to edit:")
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+
+        cursor.execute("""
+            SELECT * FROM Assets WHERE asset_id = ?
+        """, (asset_id,))
+        asset = cursor.fetchone()
+
+        if asset is None:
+            print("Asset not found.")
+            return
+        system_name = input("enter new asset name:")
+        model = input("enter new model:")
+        manufacturer = input("enter the manufacturer:")
+        system_type = input("enter asset type:")
+        ipaddress = input("enter ip address:")
+        cursor.execute("""
+                    UPDATE Assets
+                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ?
+                    WHERE asset_id = ?
+                """, (system_name, model, manufacturer, system_type, ipaddress))
+        print("Asset data successfully changed.")
 def delete_asset():
-    print()
+    asset_id = input("Enter the asset ID that you would like to edit:")
+    
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+
+        cursor.execute("""
+            DELETE FROM Assets WHERE asset_id = ?
+        """, (asset_id))
+
+        if cursor.rowcount == 0:
+            print("Asset not found.")
+        else:
+            print ("Asset has been deleted.") 
 
 def main():
     create_database()

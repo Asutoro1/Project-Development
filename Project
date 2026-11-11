@@ -3,6 +3,11 @@ Created By Jamie Laughton :D
 """
 
 import sqlite3
+import platform
+import socket
+import subprocess
+import json
+
 
 def create_database():
     #Database and table creation
@@ -17,8 +22,7 @@ def create_database():
             model TEXT,
             manufacturer TEXT,
             system_type TEXT,
-            ipaddress TEXT,
-            department TEXT)
+            ipaddress TEXT)
         """) 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS Employee( 
@@ -29,7 +33,14 @@ def create_database():
             department TEXT
             )
             """)
-
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Puchases( 
+            purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id integer NOT NULL,
+            description TEXT,
+            purchase_date TEXT
+            )
+        """)
     mydb.commit()
     mydb.close()
     print("Database created!")
@@ -39,7 +50,8 @@ def main_menu():
     print()
     print("1. enter the employee system")
     print("2. enter the asset tracking system")
-    print("3. exit")
+    print("3. enter the purchase system")
+    print("4. Exit")
     print()
     print("Please select an option from the above menu")
 def select_option1():
@@ -48,7 +60,7 @@ def select_option1():
     while not valid_option:
         try:
             choice = int(input("Option Selected: "))
-            if choice in (1,2,3):
+            if choice in (1,2,3,4):
                 valid_option = True
             else:
                 print("please enter a valid option")
@@ -93,7 +105,7 @@ def adding_employee():
         cursor = mydb.cursor()
         cursor.execute("""
             INSERT INTO Employee
-            (first_name, last_name, email, department)
+            (first_name = ?, last_name = ?, email = ?, department = ?)
             VALUES(?, ?, ?, ?)
         """, (first_name, last_name, email, department))
     print(f"employee tracked: {first_name} - {last_name} - {email} - {department} ")
@@ -176,23 +188,71 @@ def select_option3():
         except ValueError:
             print("Please enter a valid option")
     return choice
+
+def get_device_information():
+
+    # Get basic device information
+    system_name = platform.node()
+    system_type = platform.system() + " " + platform.release()
+
+    # Get IP address
+    try:
+        network = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        network.connect(("8.8.8.8", 80))
+        ipaddress = network.getsockname()[0]
+        network.close()
+    except OSError:
+        ipaddress = "Unknown"
+
+    # Get manufacturer, model and serial number using Windows
+    try:
+        command = """
+        $cs = Get-CimInstance Win32_ComputerSystem
+        $bios = Get-CimInstance Win32_BIOS
+        [pscustomobject]@{
+            Manufacturer = $cs.Manufacturer
+            Model = $cs.Model
+        } | ConvertTo-Json -Compress
+        """
+
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", command],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        device_data = json.loads(result.stdout)
+
+        manufacturer = device_data["Manufacturer"]
+        model = device_data["Model"]
+
+    except (subprocess.SubprocessError, json.JSONDecodeError, KeyError):
+        manufacturer = "Unknown"
+        model = "Unknown"
+
+    return (
+        system_name,
+        model,
+        manufacturer,
+        system_type,
+        ipaddress
+    )
+
 def adding_asset():
     #Function that will be used to add a new assets to the database.
     
-    system_name = input("Please enter the asset name you want to track:")
-    model = input("Please enter the model of the asset:")
-    manufacturer = input("Please enter the manufacturer of that the asset:")
-    system_type = input("Please enter the type of asset:")
-    ipaddress = input("Please enter the IP address of the asset:")
-    department = input("Pleas enter the department this is apart of")
+    # Collect device information automatically
+    device = get_device_information()
+
     with sqlite3.connect("AssetTracking.db") as mydb:
         cursor = mydb.cursor()
         cursor.execute("""
             INSERT INTO Assets
-            (system_name, model, manufacturer, system_type, ipaddress, department)
-            VALUES(?, ?, ?, ?, ?, ?)
-        """, (system_name, model, manufacturer, system_type, ipaddress))
-    print(f"Asset tracked: {system_name} - {model} - {manufacturer} - {system_type} - {ipaddress} - {department}")
+            (system_name, model, manufacturer, system_type, ipaddress)
+            VALUES(?, ?, ?, ?, ?)
+        """, device)
+    print(f"Asset offically tracked:")
 def view_assets():
     #This function will show all the asset data currently collected
     with sqlite3.connect("AssetTracking.db") as mydb:
@@ -223,12 +283,11 @@ def edit_assets():
         manufacturer = input("enter the manufacturer:")
         system_type = input("enter asset type:")
         ipaddress = input("enter ip address:")
-        department = input("enter department:")
         cursor.execute("""
                     UPDATE Assets
-                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ?, department = ?
+                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ?, 
                     WHERE asset_id = ?
-                """, (system_name, model, manufacturer, system_type, ipaddress, department))
+                """, (system_name, model, manufacturer, system_type, ipaddress))
         print("Asset data successfully changed.")
 def delete_asset():
     asset_id = input("Enter the asset ID that you would like to edit:")
@@ -244,6 +303,100 @@ def delete_asset():
             print("Asset not found.")
         else:
             print ("Asset has been deleted.") 
+
+def purchase_menu():
+    #This is dysplaying what all the options are.
+    print("Welcome to the Scottish Glen purchase system")
+    print("What option would you like to do")
+    print()
+    print("1. Add a new purchase")
+    print("2. View all purchases")
+    print("3. Edit an purchase record")
+    print("4. Delete an purchase record")
+    print("5. Exit")
+    print()
+    print("Please select an option from the above menu")
+def select_option4():
+    #This is getting the users choice of what they would like to do
+    valid_option = False
+    while not valid_option:
+        try:
+            choice = int(input("Option Selected: "))
+            if choice in (1,2,3,4,5):
+                valid_option = True
+            else:
+                print("please enter a valid option")
+        except ValueError:
+            print("Please enter a valid option")
+    return choice
+def adding_purchase():
+    #Function that will be used to add new purchases to the database.
+    
+    asset_id = input("Please enter the asset id:")
+    desription = input("Please enter the description of the asset:")
+    purchase_date= input("Please enter the purchase date in this form DD-MM-YYYY:")
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("""
+            INSERT INTO Purchases
+            (asset_id, desription, purchase_date)
+            VALUES(?, ?, ?)
+        """, (asset_id, desription, purchase_date))
+    print(f"employee tracked: {asset_id} - {desription} - {purchase_date} ")
+def view_purchases():
+    #This function will show all the purchase data currently collected
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("SELECT * FROM Purchases")
+        purchases = cursor.fetchall()
+    if not purchases:
+        print("No purchases found.")
+        return
+    for purchase in purchases:
+        print(purchase)
+def edit_purchase():
+    purchase_id = input("Enter the purchase ID that you would like to edit:")
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+
+        cursor.execute("""
+            SELECT * FROM Employee WHERE employee_id = ?
+        """, (purchase_id,))
+        purchase = cursor.fetchone()
+
+        if purchase is None:
+            print("employee not found.")
+            return
+        asset_id = input("Please enter the asset id:")
+        description = input("Please enter the description:")
+        purchase_date = input("Please enter the purchase date (DD-MM-YYYY):")
+
+
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+        cursor.execute("""
+            UPDATE Purchases
+            SET asset_id = ?, description = ?, purchase_date = ?
+            WHERE purchase_id = ?
+        """, (asset_id, description, purchase_date))
+    print("purchase data successfully changed.")
+def delete_purchase():
+    employee_id = input("Enter the purchase ID that you would like to delete:")
+    
+    with sqlite3.connect("AssetTracking.db") as mydb:
+        cursor = mydb.cursor()
+
+        cursor.execute("""
+            DELETE FROM Purchases WHERE purchase_id = ?
+        """, (employee_id))
+
+        if cursor.rowcount == 0:
+            print("Purchase not found.")
+        else:
+            print ("Purchase has been deleted.") 
+
 
 def main():
     create_database()
@@ -276,6 +429,19 @@ def main():
         elif choice == 5:
             print("Thanks for using our tracking system:")
     elif choice == 3:
+        purchase_menu()
+        choice = select_option4()
+        if choice == 1:
+            adding_purchase()
+        elif choice == 2:
+            view_purchases()
+        elif choice == 3:
+            edit_purchase()
+        elif choice == 4:
+            delete_purchase()
+        elif choice == 5:
+            print("Thanks for using our purchase system:")        
+    elif choice == 4:
         print("Thanks for using our system:")
 # Running processes
 if __name__ == "__main__":

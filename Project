@@ -34,7 +34,7 @@ def create_database():
             )
             """)
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Puchases( 
+        CREATE TABLE IF NOT EXISTS Purchases( 
             purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
             asset_id integer NOT NULL,
             description TEXT,
@@ -105,7 +105,7 @@ def adding_employee():
         cursor = mydb.cursor()
         cursor.execute("""
             INSERT INTO Employee
-            (first_name = ?, last_name = ?, email = ?, department = ?)
+            (first_name, last_name, email, department)
             VALUES(?, ?, ?, ?)
         """, (first_name, last_name, email, department))
     print(f"employee tracked: {first_name} - {last_name} - {email} - {department} ")
@@ -143,7 +143,7 @@ def edit_employee():
         cursor = mydb.cursor()
         cursor.execute("""
             UPDATE Employee
-            SET first_name, last_name, email, department
+            SET first_name = ?, last_name = ?, email = ?, department = ?
             WHERE employee_id = ?
         """, (first_name, last_name, email, department))
     print("employee data successfully changed.")
@@ -155,7 +155,7 @@ def delete_employee():
 
         cursor.execute("""
             DELETE FROM Employee WHERE employee_id = ?
-        """, (employee_id))
+        """, (employee_id,))
 
         if cursor.rowcount == 0:
             print("Employee not found.")
@@ -227,7 +227,7 @@ def get_device_information():
         manufacturer = device_data["Manufacturer"]
         model = device_data["Model"]
 
-    except (subprocess.SubprocessError, json.JSONDecodeError, KeyError):
+    except (OSError,subprocess.SubprocessError, json.JSONDecodeError, KeyError):
         manufacturer = "Unknown"
         model = "Unknown"
 
@@ -265,7 +265,7 @@ def view_assets():
     for asset in assets:
         print(asset)
 def edit_assets():
-    asset_id = input("Enter the asset ID that you would like to edit:")
+    asset_id = int(input("Enter the asset ID that you would like to edit:"))
 
     with sqlite3.connect("AssetTracking.db") as mydb:
         cursor = mydb.cursor()
@@ -285,12 +285,12 @@ def edit_assets():
         ipaddress = input("enter ip address:")
         cursor.execute("""
                     UPDATE Assets
-                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ?, 
+                    SET system_name = ?, model = ?, manufacturer = ?, system_type = ?, ipaddress = ? 
                     WHERE asset_id = ?
-                """, (system_name, model, manufacturer, system_type, ipaddress))
+                """, (system_name, model, manufacturer, system_type, ipaddress, asset_id))
         print("Asset data successfully changed.")
 def delete_asset():
-    asset_id = input("Enter the asset ID that you would like to edit:")
+    asset_id = input("Enter the asset ID that you would like to delete:")
     
     with sqlite3.connect("AssetTracking.db") as mydb:
         cursor = mydb.cursor()
@@ -333,7 +333,7 @@ def adding_purchase():
     #Function that will be used to add new purchases to the database.
     
     asset_id = input("Please enter the asset id:")
-    desription = input("Please enter the description of the asset:")
+    description = input("Please enter the description of the asset:")
     purchase_date= input("Please enter the purchase date in this form DD-MM-YYYY:")
 
     with sqlite3.connect("AssetTracking.db") as mydb:
@@ -342,8 +342,8 @@ def adding_purchase():
             INSERT INTO Purchases
             (asset_id, desription, purchase_date)
             VALUES(?, ?, ?)
-        """, (asset_id, desription, purchase_date))
-    print(f"employee tracked: {asset_id} - {desription} - {purchase_date} ")
+        """, (asset_id, description, purchase_date))
+    print(f"employee tracked: {asset_id} - {description} - {purchase_date} ")
 def view_purchases():
     #This function will show all the purchase data currently collected
     with sqlite3.connect("AssetTracking.db") as mydb:
@@ -362,12 +362,12 @@ def edit_purchase():
         cursor = mydb.cursor()
 
         cursor.execute("""
-            SELECT * FROM Employee WHERE employee_id = ?
+            SELECT * FROM Purchases WHERE purchase_id = ?
         """, (purchase_id,))
         purchase = cursor.fetchone()
 
         if purchase is None:
-            print("employee not found.")
+            print("purchase not found.")
             return
         asset_id = input("Please enter the asset id:")
         description = input("Please enter the description:")
@@ -383,14 +383,14 @@ def edit_purchase():
         """, (asset_id, description, purchase_date))
     print("purchase data successfully changed.")
 def delete_purchase():
-    employee_id = input("Enter the purchase ID that you would like to delete:")
+    purchase_id = input("Enter the purchase ID that you would like to delete:")
     
     with sqlite3.connect("AssetTracking.db") as mydb:
         cursor = mydb.cursor()
 
         cursor.execute("""
             DELETE FROM Purchases WHERE purchase_id = ?
-        """, (employee_id))
+        """, (purchase_id))
 
         if cursor.rowcount == 0:
             print("Purchase not found.")
